@@ -1,0 +1,82 @@
+#!/bin/bash
+# set -eu # -e: stop uppon errors / -u: do not allow unbinded variables
+set -e # -e: stop uppon errors
+
+option=$1
+database=$2
+
+logfile=history.log
+
+options=('backup' 'restore')
+
+[[ " ${options[@]} " =~ " $option " ]] || echo -e "WRONG OPTION PROVIDED"
+
+function catch() {
+  if [ "$1" != "0" ]; then
+    # error handling goes here
+    echo "Error $1 occurred on $2"
+    cleanup
+  else echo "finished CAT"
+  fi
+}
+
+function set_variables() {
+    echo "** Starting set_variables"
+    user="admin" # explain how to do it dynamically
+    pass="MyPass123" # explain how to do it dynamically
+    host="mysql.ahmad.com" # explain how to do it dynamically
+    datevar="$(date +%Y-%m-%d)"
+    hourvar="$(date +%H:%M)"
+    backup_folder="~/devops_bkp" # explain how to do it dynamically
+    echo "** Finished set_variables"
+}
+
+function help() {
+  echo -e "Usage:"
+  echo -e "Options: backup|restore"
+  echo -e "./backup-restore.sh <option> <database>\n"
+}
+
+function backup() {
+  echo -e "** Starting the backup of $database into $backup_folder with the filename: ${database}_${datevar}.dmp\n"
+  echo -e "mysqldump -u $user -p$pass -h $host $database > $backup_folder/${database}_${datevar}.dmp"
+  echo -e "** Backup finished!\n"
+}
+
+function restore() {
+  echo -e "** Starting the restore of $database from $backup_folder with the filename: ${database}_${datevar}.dmp\n"
+  echo -e "mysql -u $user -p$pass -h $host $database < $backup_folder/${database}_${datevar}.dmp"
+  echo -e "** Restore finished!\n"
+}
+
+function cleanup() {
+  echo -e "rm -rf $backup_folder/${database}_${datevar}.dmp"
+}
+
+function main() {
+  # Check if env is provided
+  if [[ -z "${2:-}" ]]; then
+      echo -e "\nError: You need to provide an environmentment!!!\n"
+      help
+      exit 1
+  fi
+  if [[ "$option" == "backup" ]]; then
+    set_variables
+    backup
+
+    echo -e "The backup ran once on this date $(date) by this user $USERNAME \n" >> $logfile
+
+    exit 1
+ fi
+  if [[ "$option" == "restore" ]]; then
+    set_variables
+    restore
+    cleanup
+
+    echo -e "The restore ran once on this date $(date) by this user $USERNAME \n" >> $logfile
+    
+  exit 1
+ fi
+}
+
+main "$@"
