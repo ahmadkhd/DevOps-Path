@@ -1,0 +1,146 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Tutorial CloudFormation - WordPress - ARM - v1.0",
+    "Metadata": {
+        "AWS::CloudFormation::Interface": {
+            "ParameterGroups": [
+                {
+                    "Label": { "default": "Instance Settings" },
+                    "Parameters": [ "InstanceType" , "RemoveInstance" , "VpcId" , "SubnetId" , "KeyName" , "InstanceAMI", "DBClass" ]
+                }
+            ],
+            "ParameterLabels": {
+                "InstanceType": { "default": "Instance Type" },
+                "RemoveInstance": { "default": "Remove Instance" },
+                "VpcId": { "default": "VPC ID" },
+                "SubnetId": { "default": "Subnet ID" },
+                "KeyName": { "default": "Instance Key Pair Name" },
+                "InstanceAMI": { "default": "Instance AMI" },
+                "DBClass":{"default":"db.t2.smal"}
+	    }
+        }
+    },
+
+    "Parameters": {
+        "InstanceType": {
+            "Type": "String",
+            "Description": "Instance type - ARM",
+            "Default": "t4g.micro",
+            "AllowedValues": [ "t4g.nano" , "t4g.micro" , "t4g.small" , "t4g.medium" , "t4g.large" , "t4g.xlarge" , "t4g.2xlarge" ]
+        },
+        "RemoveInstance": {
+            "Type": "String",
+            "Description": "Remove EC2 Instance?",
+            "Default": "no",
+            "AllowedValues": [ "yes" , "no" ]
+        },
+        "VpcId": {
+            "Type": "AWS::EC2::VPC::Id",
+            "Description": "ID of the VPC"
+        },
+        "SubnetId": {
+            "Type": "AWS::EC2::Subnet::Id",
+            "Description": "Subnet ID for VPC"
+        },
+        "KeyName": {
+            "Type": "String",
+            "Description": "Keypair name",
+            "Default": "mld-us-east-1-2021"
+        },
+        "InstanceAMI": {
+            "Type": "AWS::EC2::Image::Id",
+            "Description": "Your private AMI ID or Amazon AMI ID",
+            "Default": "ami-0b683223eeade51eb"
+	},
+
+	"DBClass" : {
+      "Description" : "Database instance class",
+      "Type" : "String",
+      "Default" : "db.t2.small",
+      "AllowedValues" : [ "db.t1.micro", "db.m1.small", "db.m1.medium", "db.m1.large", "db.m1.xlarge", "db.m2.xlarge", "db.m2.2xlarge", "db.m2.4xlarge", "db.m3.medium", "db.m3.large", "db.m3.xlarge", "db.m3.2xlarge", "db.m4.large", "db.m4.xlarge", "db.m4.2xlarge", "db.m4.4xlarge", "db.m4.10xlarge", "db.r3.large", "db.r3.xlarge", "db.r3.2xlarge", "db.r3.4xlarge", "db.r3.8xlarge", "db.m2.xlarge", "db.m2.2xlarge", "db.m2.4xlarge", "db.cr1.8xlarge", "db.t2.micro", "db.t2.small", "db.t2.medium", "db.t2.large"],
+
+      "ConstraintDescription" : "must select a valid database instance type."
+    }
+    },
+
+    "Conditions": {
+        "UseInstance": { "Fn::Equals": [ { "Ref": "RemoveInstance" }, "no" ] }
+    },
+
+    "Resources": {
+        "WPServerSG": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Condition": "UseInstance",
+			"Properties": {
+				"GroupDescription": "Server Security Group",
+				"VpcId": {"Ref": "VpcId"},
+				"SecurityGroupIngress": [
+                    { "IpProtocol": "tcp", "FromPort": "22", "ToPort": "22", "CidrIp": "0.0.0.0/0", "Description" : "SSH - Only for Training Purpose" },
+					{ "IpProtocol": "tcp", "FromPort": "80", "ToPort": "80", "CidrIp": "0.0.0.0/0", "Description" : "HTTP" },
+                    { "IpProtocol": "tcp", "FromPort": "443", "ToPort": "443", "CidrIp": "0.0.0.0/0", "Description" : "HTTPS - If you intend to use CertBot" }
+				],
+				"SecurityGroupEgress": [
+					{ "IpProtocol": "tcp", "FromPort": "80", "ToPort": "80", "CidrIp": "0.0.0.0/0", "Description" : "HTTP" },
+					{ "IpProtocol": "tcp", "FromPort": "443", "ToPort": "443", "CidrIp": "0.0.0.0/0", "Description" : "HTTPS" },
+					{ "IpProtocol": "udp", "FromPort": "53", "ToPort": "53", "CidrIp": "0.0.0.0/0", "Description" : "DNS" },
+					{ "IpProtocol": "udp", "FromPort": "123", "ToPort": "123", "CidrIp": "0.0.0.0/0", "Description" : "NTP" }
+				]
+			}
+        },
+
+        "WPServer": {
+            "Type": "AWS::EC2::Instance",
+            "Condition": "UseInstance",
+            "Properties": {
+                "ImageId": { "Ref": "InstanceAMI" },
+                "InstanceType": { "Ref": "InstanceType" },
+                "SubnetId":  { "Ref": "SubnetId" },
+                "SecurityGroupIds": [ { "Ref": "WPServerSG" } ],
+                "KeyName": { "Ref": "KeyName" },
+                "Tags": [ { "Key": "Name" , "Value": { "Ref": "AWS::StackName" } } ],
+                "UserData": { "Fn::Base64": { "Fn::Join": [ "", [
+                    "#!/bin/sh\n",
+                    "# https://pip.pypa.io/en/stable/installing/\n",
+                    "curl -O https://bootstrap.pypa.io/get-pip.py\n",
+                    "python get-pip.py\n",
+                    "pip install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
+                    "/opt/aws/bin/cfn-init -v",
+                            " --region ", { "Ref" : "AWS::Region" },
+                            " --stack ", { "Ref" : "AWS::StackName" },
+                            " --resource WPServer\n",
+                    "yum -q -y install mariadb-server\n",
+                    "systemctl enable mariadb && systemctl start mariadb\n",
+                    "mysql mysql << EOM\n",
+                    "   CREATE DATABASE wordpress;\n",
+                    "   GRANT ALL PRIVILEGES ON wordpress.* to wordpress IDENTIFIED BY 'wordpr3ss';\n",
+                    "   DELETE FROM user WHERE user = '';\n",
+                    "   FLUSH PRIVILEGES;\n",
+                    "EOM\n",
+                    "amazon-linux-extras enable php7.4\n",
+                    "yum clean metadata\n",
+                    "yum install -q -y httpd php php-{pear,cgi,common,curl,mbstring,gd,mysqlnd,gettext,bcmath,json,xml,fpm,intl,zip,imap}\n",
+                    "cd /var/www/html\n",
+                    "curl -sL https://wordpress.org/latest.tar.gz | tar xfz -\n",
+                    "chown -R root:root wordpress\n",
+                    "sed -e 's/database_name_here/wordpress/'",
+                            " -e 's/username_here/wordpress/'",
+                            " -e 's/password_here/wordpr3ss/'",
+                            " -e 's/localhost/127.0.0.1/'",
+                            " < wordpress/wp-config-sample.php > wordpress/wp-config.php\n",
+                    "echo 'RedirectMatch ^/$ /wordpress' > /etc/httpd/conf.d/wordpress.conf\n",
+                    "chown apache:apache /var/www/html/wordpress -R\n",
+                    "chmod 755 /var/www/html/wordpress/wp-content -R\n",
+                    "setsebool -P httpd_can_network_connect on\n",
+                    "systemctl enable httpd && systemctl start httpd\n"
+                ] ] } }
+            }
+        }
+    },
+
+    "Outputs": {
+        "URL": {
+            "Description": "Wordpress Public URL",
+            "Value": { "Fn::If": [ "UseInstance" , { "Fn::Join": [ "", [ "http://", { "Fn::GetAtt": [ "WPServer", "PublicDnsName" ] }, "/" ] ] } , "NONE" ] }
+        }
+    }
+}
