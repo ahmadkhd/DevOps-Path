@@ -1,0 +1,114 @@
+👉
+cat /dev/null > ~/.ssh/keyp
+To empty up the content of keyp
+
+👉
+cat /dev/null > ~/.ssh/keyp && vim kyp
+&& to run another command in the same line right after it has run what’s before &&
+
+
+👉
+command > /dev/null 2>&1
+
+Notice the 2>&1 at the end. We redirect stderr(2) to stdout(1). We use &1 to mention to the shell that the destination file is a file descriptor and not a file name.
+
+cat --INCORRECT_OPTION > dev/null 2>&1
+
+So if we use 2>1, we will only redirect stderr to a file called 1
+
+👉
+| grep "string"
+cat file | grep "string"
+Search for what’s between “ “ from the file (file) and display it (cat)
+
+Echo “Hello world” >> readme.txt
+> overwrite the existing content
+>> add to the existing content
+
+
+👉
+cat > "config" << EOF
+[default]
+region = us-west-2
+output = json
+EOF
+
+The > after cat is to overwrite the content
+If it was >> it would add to the content
+
+EOF means End Of File
+“Config” is the name of the file
+
+
+👉 Following a Log(file) Tail or Real-Time Log Monitoring - shows changes instantly
+tail -f
+tail -n 10
+
+👉
+sed -i 's/Ahmad is here//g' ~/.ssh/keyp  
+To substitute words and phrases
+The -i means "do this in place," as in don't create another file. The capital I near the end stands for "case-insensitive" and means that whether ‘ cows ‘ has any capital letters in it or not, change it to Ants. The g means do it globally, throughout the whole file. Here is the complete command:
+sed -i 's/cows/Ants/Ig' keyp
+Now cat ~/.ssh/keyp
+
+👉 lsof 
+List All Of Open Files 
+ to report a list of all open files and the processes that opened them
+
+Lsof
+
+👉 A good reference for operators
+
+https://tldp.org/LDP/abs/html/comparison-ops.html
+
+👉 Operators and their usage
+
+-n string is not null.
+
+ -z string is null, that is, has zero length
+
+-b file     Checks if the file is a block special file; if yes, then the condition becomes true.    [ -b $file ] is false.
+
+-c file     Checks if the file is a character special file; if yes, then the condition becomes true.    [ -c $file ] is false.
+
+-d file     Checks if the file is a directory; if yes, then the condition becomes true.     [ -d $file ] is not true.
+
+-f file     Checks if the file is an ordinary file as opposed to a directory or special file; if yes, then the condition becomes true.  [ -f $file ] is true.
+
+-g file     Checks if the file has its set group ID (SGID) bit set; if yes, then the condition becomes true.    [ -g $file ] is false.
+
+-k file     Checks if the file has its sticky bit set; if yes, then the condition becomes true.     [ -k $file ] is false.
+
+-p file     Checks if the file is a named pipe; if yes, then the condition becomes true.    [ -p $file ] is false.
+
+-t file     Checks if the file descriptor is open and associated with a terminal; if yes, then the condition becomes true.  [ -t $file ] is false.
+
+-u file     Checks if the file has its Set User ID (SUID) bit set; if yes, then the condition becomes true.     [ -u $file ] is false.
+
+-r file     Checks if the file is readable; if yes, then the condition becomes true.    [ -r $file ] is true.
+-w file     Checks if the file is writable; if yes, then the condition becomes true.    [ -w $file ] is true.
+
+-x file     Checks if the file is executable; if yes, then the condition becomes true.  [ -x $file ] is true.
+-s file     Checks if the file has size greater than 0; if yes, then condition becomes true.    [ -s $file ] is 
+true.
+
+-e file     Checks if the file exists; is true even if the file is a directory but exists.  [ -e $file ] is true.
+
+
+👉 Networking
+
+Netstat -rn
+
+Ifconfig    	to see/configure the interfaces I have
+
+Ps 		to see the status of process on the system
+
+Iftop 		to see my interface’s name, the IP and the MAC 
+
+
+Iotop 		to see the IO units
+
+Netcat		to see a package and IP
+
+Tcpdump		to monitor the internet connection in the real time
+
