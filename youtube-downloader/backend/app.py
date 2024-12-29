@@ -9,6 +9,7 @@ DOWNLOAD_DIR = "downloads"  # Directory to store downloaded files
 if not os.path.exists(DOWNLOAD_DIR):
     os.makedirs(DOWNLOAD_DIR)
 
+
 @app.route('/download/video', methods=['GET'])
 def download_video():
     url = request.args.get('url')
@@ -22,11 +23,12 @@ def download_video():
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
-            filename = ydl.prepare_filename(info)
+            filepath = info['filepath']
 
-        return jsonify({'success': True, 'downloadUrl': f'/file/{os.path.basename(filename)}'})
+        return jsonify({'success': True, 'downloadUrl': f'/file/{os.path.basename(filepath)}'})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+
 
 @app.route('/download/audio', methods=['GET'])
 def download_audio():
@@ -46,11 +48,12 @@ def download_audio():
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
-            filename = ydl.prepare_filename(info).replace(".webm", ".mp3")
+            filepath = info['filepath'].replace(".webm", ".mp3")
 
-        return jsonify({'success': True, 'downloadUrl': f'/file/{os.path.basename(filename)}'})
+        return jsonify({'success': True, 'downloadUrl': f'/file/{os.path.basename(filepath)}'})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+
 
 @app.route('/file/<filename>', methods=['GET'])
 def serve_file(filename):
@@ -59,6 +62,7 @@ def serve_file(filename):
         return jsonify({'success': False, 'message': 'File not found'}), 404
 
     return send_file(file_path, as_attachment=True)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
