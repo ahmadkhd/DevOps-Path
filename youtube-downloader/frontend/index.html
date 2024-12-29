@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Downloader</title>
+    <style>
+        body {
+          font-family: Arial, sans-serif;
+          margin: 0;
+          padding: 0;
+          background-color: #f4f4f9;
+          color: #333;
+          text-align: center;
+        }
+
+        header {
+          background-color: #4CAF50;
+          color: white;
+          padding: 10px 0;
+          font-size: 1.5em;
+        }
+
+        .container {
+          margin: 20px auto;
+          max-width: 600px;
+          padding: 20px;
+          background: white;
+          border-radius: 10px;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        input[type="text"] {
+          width: 80%;
+          padding: 10px;
+          margin: 10px 0;
+          border: 1px solid #ccc;
+          border-radius: 5px;
+          font-size: 1em;
+        }
+
+        button {
+          padding: 10px 15px;
+          margin: 10px 5px;
+          border: none;
+          border-radius: 5px;
+          background-color: #4CAF50;
+          color: white;
+          font-size: 1em;
+          cursor: pointer;
+        }
+
+        button:hover {
+          background-color: #45a049;
+        }
+
+        .result {
+          margin-top: 20px;
+        }
+
+        .result a {
+          text-decoration: none;
+          color: #007BFF;
+        }
+
+        .result a:hover {
+          text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+<header>
+    YouTube Downloader
+</header>
+<div class="container">
+    <h2>Enter YouTube URL</h2>
+    <label for="youtube-url"></label><input type="text" id="youtube-url" placeholder="Paste YouTube URL here">
+    <br>
+    <button onclick="downloadVideo()">Download Video (4K)</button>
+    <button onclick="downloadAudio()">Download Audio (MP3)</button>
+    <div class="result" id="result"></div>
+</div>
+<script>
+    const backendUrl = "http://your-backend-url.com"; // Replace with your backend URL
+
+    async function downloadVideo() {
+      const url = document.getElementById("youtube-url").value.trim();
+      if (!url) {
+        alert("Please enter a valid YouTube URL.");
+        return;
+      }
+
+      try {
+        const response = await fetch(`${backendUrl}/download/video?url=${encodeURIComponent(url)}`);
+        const data = await response.json();
+        if (data.success) {
+          document.getElementById("result").innerHTML = `
+            <p>Download ready: <a href="${backendUrl}${data.downloadUrl}" target="_blank">Click here to download video</a></p>
+          `;
+        } else {
+          alert(`Error: ${data.message}`);
+        }
+      } catch (error) {
+        alert("Failed to download video. Please try again.");
+      }
+    }
+
+    async function downloadAudio() {
+      const url = document.getElementById("youtube-url").value.trim();
+      if (!url) {
+        alert("Please enter a valid YouTube URL.");
+        return;
+      }
+
+      try {
+        const response = await fetch(`${backendUrl}/download/audio?url=${encodeURIComponent(url)}`);
+        const data = await response.json();
+        if (data.success) {
+          document.getElementById("result").innerHTML = `
+            <p>Download ready: <a href="${backendUrl}${data.downloadUrl}" target="_blank">Click here to download audio</a></p>
+          `;
+        } else {
+          alert(`Error: ${data.message}`);
+        }
+      } catch (error) {
+        alert("Failed to download audio. Please try again.");
+      }
+    }
+</script>
+</body>
+</html>
