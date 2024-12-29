@@ -10,7 +10,7 @@ if not os.path.exists(DOWNLOAD_DIR):
     os.makedirs(DOWNLOAD_DIR)
 
 
-@app.route('/download/video', methods=['GET'])
+@app.route('/downloads/video', methods=['GET'])
 def download_video():
     url = request.args.get('url')
     if not url:
@@ -30,7 +30,7 @@ def download_video():
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
-@app.route('/download/audio', methods=['GET'])
+@app.route('/downloads/audio', methods=['GET'])
 def download_audio():
     url = request.args.get('url')
     if not url:
