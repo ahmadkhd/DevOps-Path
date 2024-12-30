@@ -1,68 +1,59 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_from_directory
+import subprocess
 import os
-import yt_dlp
 
 app = Flask(__name__)
-DOWNLOAD_DIR = "downloads"  # Directory to store downloaded files
 
-# Ensure the download directory exists
-if not os.path.exists(DOWNLOAD_DIR):
-    os.makedirs(DOWNLOAD_DIR)
+# Route to serve the frontend (index.html)
+@app.route('/')
+def serve_frontend():
+    return send_from_directory('../frontend', 'index.html')  # Adjust the path as needed
+
+# Static file route for CSS, JS, etc.
+@app.route('/<path:path>')
+def serve_static_files(path):
+    return send_from_directory('../frontend', path)
 
 
-@app.route('/downloads/video', methods=['GET'])
+@app.route('/download/video', methods=['GET'])
 def download_video():
     url = request.args.get('url')
     if not url:
-        return jsonify({'success': False, 'message': 'URL is required'}), 400
+        return jsonify({"success": False, "message": "URL is required"}), 400
 
     try:
-        ydl_opts = {
-            'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4',
-            'outtmpl': os.path.join(DOWNLOAD_DIR, '%(title)s.%(ext)s')
-        }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-            filepath = info['filepath']
-
-        return jsonify({'success': True, 'downloadUrl': f'/file/{os.path.basename(filepath)}'})
+        # Run the Bash script for video download
+        result = subprocess.run(
+            ["./youtube_downloader_video.sh", url],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        if result.returncode == 0:
+            return jsonify({"success": True, "message": result.stdout.decode("utf-8")})
+        else:
+            return jsonify({"success": False, "message": result.stderr.decode("utf-8")})
     except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({"success": False, "message": str(e)}), 500
 
-
-@app.route('/downloads/audio', methods=['GET'])
+@app.route('/download/audio', methods=['GET'])
 def download_audio():
     url = request.args.get('url')
     if not url:
-        return jsonify({'success': False, 'message': 'URL is required'}), 400
+        return jsonify({"success": False, "message": "URL is required"}), 400
 
     try:
-        ydl_opts = {
-            'format': 'bestaudio/best',
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': '192',
-            }],
-            'outtmpl': os.path.join(DOWNLOAD_DIR, '%(title)s.%(ext)s')
-        }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-            filepath = info['filepath'].replace(".webm", ".mp3")
-
-        return jsonify({'success': True, 'downloadUrl': f'/file/{os.path.basename(filepath)}'})
+        # Run the Bash script for audio download
+        result = subprocess.run(
+            ["./youtube_downloader_audio.sh", url],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        if result.returncode == 0:
+            return jsonify({"success": True, "message": result.stdout.decode("utf-8")})
+        else:
+            return jsonify({"success": False, "message": result.stderr.decode("utf-8")})
     except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
-
-
-@app.route('/file/<filename>', methods=['GET'])
-def serve_file(filename):
-    file_path = os.path.join(DOWNLOAD_DIR, filename)
-    if not os.path.exists(file_path):
-        return jsonify({'success': False, 'message': 'File not found'}), 404
-
-    return send_file(file_path, as_attachment=True)
-
+        return jsonify({"success": False, "message": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=False)
